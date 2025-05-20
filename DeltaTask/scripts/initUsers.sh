@@ -1,36 +1,50 @@
 #!/bin/bash
-if [ "$(id -u)" -ne 0 ]; then
-    echo "Error: Please run this script as root."
-    exit 1
-fi
+[ "$(id -u)" -ne 0 ] && { echo "Run as root"; exit 1; }
 
-yamlFileUH="../users.yaml"
+yamlFile="../users.yaml"
+[ ! -f "$yamlFile" ] && { echo "Missing users.yaml"; exit 1; }
 
-if [ ! -f "$yamlFileUH" ]; then
-    echo "Error: users.yaml file uh $yamlFileUH inga ila baa!"
-    exit 1
-fi
-add_users_by_role() {
-    rolename="$1"
-    yamlkey="$2"
+groupadd -f g_admin
+groupadd -f g_user
+groupadd -f g_author
+groupadd -f g_mod
 
-    echo ""
-    echo "Processing $rolename users '>_<'"
-
-    for username in $(yq -r ".${yamlkey}[]?.username" "$yamlFileUH"); do
-        if id "$username" &>/dev/null; then
-            echo "  - User '$username' already irukaaru so, Skipping."
-        else
-            useradd -m -s /bin/bash "$username"
-            echo "  - User '$username' create Panniyachu."
-        fi
-    done
+create_user() {
+  useradd -m -s /bin/bash -g "$2" -d "/home/$3/$1" "$1" 2>/dev/null || true
 }
-add_users_by_role "Admin"     "admins"
-add_users_by_role "Regular"   "users"
-add_users_by_role "Author"    "authors"
-add_users_by_role "Moderator" "mods"
 
-echo ""
-echo "Mudijitu!:]"
-exit 0
+yq eval '.admins[].username' "$yamlFile" 2>/dev/null | while read -r user; do
+  [ -n "$user" ] && create_user "$user" g_admin admin
+done
+
+yq eval '.users[].username' "$yamlFile" 2>/dev/null | while read -r user; do
+  if [ -n "$user" ]; then
+    create_user "$user" g_user users
+    mkdir -p "/home/users/$user/all_blogs"
+  fi
+done
+
+yq eval '.authors[].username' "$yamlFile" 2>/dev/null | while read -r user; do
+  if [ -n "$user" ]; then
+    create_user "$user" g_author authors
+    mkdir -p "/home/authors/$user/"{blogs,public}
+  fi
+done
+
+yq eval '.mods[] | .username + " " + (.assigned_authors | join(" "))' "$yamlFile" 2>/dev/null | while read -r mod authors; do
+  if [ -n "$mod" ]; then
+    create_user "$mod" g_mod mods
+    rm -f "/home/mods/$mod/"*
+    for author in $authors; do
+      [ -n "$author" ] && ln -sf "/home/authors/$author/public" "/home/mods/$mod/$author"
+    done
+  fi
+done
+
+yq eval '.authors[].username' "$yamlFile" 2>/dev/null | while read -r author; do
+  if [ -n "$author" ]; then
+    yq eval '.users[].username' "$yamlFile" 2>/dev/null | while read -r user; do
+      [ -n "$user" ] && ln -sf "/home/authors/$author/public" "/home/users/$user/all_blogs/$author"
+    done
+  fi
+done

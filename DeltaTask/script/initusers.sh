@@ -215,6 +215,7 @@ done
 for admin in $(get_usernames admins); do
   grant_admin_access "$admin"
 done
+bash manage_blogs_setup.sh
 bash blogfilter_setup.sh
 echo "initusers: Done."
 exit 0

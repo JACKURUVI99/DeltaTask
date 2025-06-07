@@ -1,159 +1,220 @@
-#!/bin/bash 
-#set -euo pipefail
+#!/bin/bash
 
-groupadd g_user
-echo "group g_user created"
-groupadd g_author
-echo "group g_author created"
-groupadd g_admin
-echo "group g_admin created"
-groupadd g_mods
-echo "group g_mod created"
+USERS_YAML_FILE="../users.yaml"
 
-YAML_DIR="/home/harishannavisamy/Deltask/users.yaml"
+# Fix permissions on important project files/folders for current user
+fix_permissions() {
+  # Get current user running the script
+  local current_user
+  current_user=$(whoami)
 
-echo "folders created for users,authors,mods,admins - in /home dir"
+  # Base project directory - adjust if needed
+  local base_dir="/home/harishannavisamy/new_Deltask"
 
-for user in $(yq ".users[] | .username" $YAML_DIR); do 
-    useradd -m -d /home/users/$user $user 
-    usermod -aG g_user $user
+  echo "Fixing permissions in $base_dir for user $current_user..."
+
+  # Change ownership recursively to current user
+  sudo chown -R "$current_user":"$current_user" "$base_dir"
+
+  # Fix permissions - readable and writable by owner
+  sudo chmod -R u+rw "$base_dir"
+
+  # Make sure directories are executable for user
+  find "$base_dir" -type d -exec chmod u+rwx {} +
+
+  echo "Permissions fixed."
+}
+
+# Groups & base dirs for each category
+GROUPS=(g_user g_author g_mod g_admin)
+BASEDIRS=("/home/users" "/home/authors" "/home/mods" "/home/admin")
+CATEGORIES=(users authors mods admins)
+
+default_password="123"
+
+# Create groups if missing
+for grp in "${GROUPS[@]}"; do
+  if ! getent group "$grp" >/dev/null; then
+    groupadd "$grp"
+  fi
 done
-for admin in $(yq ".admins[] | .username" $YAML_DIR); do 
-    useradd -m -d /home/admins/$admin $admin 
-    usermod -aG g_admin $admin
-done
-for mod in $(yq ".mods[] | .username" $YAML_DIR); do 
-    useradd -m -d /home/mods/$mod $mod 
-    usermod -aG g_mods $mod
-done
-for author in $(yq ".authors[] | .username" $YAML_DIR);do 
-    useradd -m -d /home/authors/$author $author
-    usermod -aG g_author $author
-done
 
-n=0
-while true; do 
-    modeh=$(yq ".mods[$n]" "$YAML_DIR")
-    
-    if [[ "$modeh" == "null" ]]; then
-        break
+# Function to get group by category
+get_group() {
+  case "$1" in
+    users) echo "g_user" ;;
+    authors) echo "g_author" ;;
+    mods) echo "g_mod" ;;
+    admins) echo "g_admin" ;;
+    *) echo "" ;;
+  esac
+}
+
+# Function to get base dir by category
+get_basedir() {
+  case "$1" in
+    users) echo "/home/users" ;;
+    authors) echo "/home/authors" ;;
+    mods) echo "/home/mods" ;;
+    admins) echo "/home/admin" ;;
+    *) echo "" ;;
+  esac
+}
+
+#Read usernames from YAML for a category
+get_usernames() {
+  local category=$1
+  yq e ".${category}[] | .username" "$USERS_YAML_FILE" 2>/dev/null || echo ""
+}
+
+# Read full name for user from YAML
+get_fullname() {
+  local category=$1
+  local username=$2
+  yq e ".${category}[] | select(.username==\"$username\") | .name" "$USERS_YAML_FILE"
+}
+
+# Create or unlock user
+create_or_unlock_user() {
+  local category=$1
+  local username=$2
+  local fullname=$3
+  local group
+  local homedir
+
+  group=$(get_group "$category")
+  homedir="$(get_basedir "$category")/$username"
+
+  if id "$username" >/dev/null 2>&1; then
+    # Unlock user (expire date -1)
+    usermod -e -1 "$username" 2>/dev/null || true
+  else
+    # Create user with home, comment(fullname), primary group and add to group
+    useradd -m -d "$homedir" -c "$fullname" -G "$group" "$username"
+    echo -e "${default_password}\n${default_password}" | passwd "$username" >/dev/null 2>&1
+  fi
+}
+
+# Setup home directory and permissions for a user
+setup_home_dir() {
+  local category=$1
+  local username=$2
+  local homedir
+
+  homedir="$(get_basedir "$category")/$username"
+
+  # Create home dir if missing
+  mkdir -p "$homedir"
+
+  # Set ownership
+  chown "$username:$username" "$homedir"
+
+  # Set permissions
+  case "$category" in
+    users|authors)
+      chmod 700 "$homedir"
+      ;;
+    mods)
+      chmod 750 "$homedir"
+      ;;
+    admins)
+      chmod 700 "$homedir"
+      ;;
+  esac
+
+  # For authors: create blogs and public directories only
+  if [[ "$category" == "authors" ]]; then
+    mkdir -p "$homedir/blogs" "$homedir/public"
+    chown -R "$username:$username" "$homedir/blogs" "$homedir/public"
+    chmod 700 "$homedir/blogs"
+    chmod 755 "$homedir/public"
+  fi
+}
+
+# Lock users removed from YAML, except root and harishannavisamy
+lock_removed_users() {
+  local category=$1
+  local base_dir
+  base_dir=$(get_basedir "$category")
+
+  for user_dir in "$base_dir"/*; do
+    [[ -d "$user_dir" ]] || continue
+    username=$(basename "$user_dir")
+    # Skip root and harishannavisamy
+    if [[ "$username" == "root" || "$username" == "harishannavisamy" ]]; then
+      continue
     fi
 
-    mod_username=$(echo "$modeh" | yq ".username" | sed 's/"//g')
-
-    for auth in $(echo "$modeh" | yq ".authors[]" | sed 's/"//g'); do 
-        setfacl -R -m u:$mod_username:rwx /home/authors/$auth
-        setfacl -d -m u:$mod_username:rwx /home/authors/$auth
-        echo "Permission set successfully for $mod_username on /home/authors/$auth"
-    done
-
-    ((n++))
-done
-
-for admin in $(yq ".admins[] | .username" $YAML_DIR | sed 's/"//g'); do
-    for user_dir in /home/users/*; do
-        setfacl -R -m u:$admin:rwx "$user_dir"
-        setfacl -d -m u:$admin:rwx "$user_dir"
-    done
-    for author_dir in /home/authors/*; do 
-        setfacl -R -m u:$admin:rwx "$author_dir"
-        setfacl -d -m u:$admin:rwx "$author_dir"
-    done
-    for mod_dir in /home/mods/*;do
-        setfacl -R -m u:$admin:rwx "$mod_dir"
-        setfacl -d -m u:$admin:rwx "$mod_dir"
-    done
-    echo "Full access given to admin $admin on /home/users and /home/authors and /home/mods"
-done
-
-for author_d in $(yq '.authors[] | .username ' "$YAML_DIR" | sed 's/"//g');do
-    mkdir -p /home/authors/$author_d/public
-    chown $author_d:g_author /home/authors/$author_d/public
-    mkdir -p /home/authors/$author_d/blogs
-    chown $author_d:g_author /home/authors/$author_d/blogs
-    chmod 750 /home/authors/$author_d/blogs
-
-    BLOGS_YAML="/home/authors/$author_d/blogs.yaml"
-    if [ ! -f "$BLOGS_YAML" ]; then
-        cat > "$BLOGS_YAML" <<EOF
-categories:
-  1: "Sports"
-  2: "Cinema"
-  3: "Technology"
-  4: "Travel"
-  5: "Food"
-  6: "Lifestyle"
-  7: "Finance"
-
-blogs:
-  - file_name: "blog.txt"
-    publish_status: true
-    cat_order: [2,1,3]
-EOF
-        chown $author_d:g_author "$BLOGS_YAML"
-        chmod 644 "$BLOGS_YAML"
-        echo "Created blogs.yaml for $author_d"
+    # Check if user is in YAML
+    if ! grep -qw "$username" <(get_usernames "$category"); then
+      # Lock user account
+      usermod -e 1 "$username" 2>/dev/null || true
+      echo "Locked removed $category user: $username"
     fi
-done 
+  done
+}
 
-for user_d in $(yq '.users[] | .username' "$YAML_DIR" |sed 's/"//g');do
-    mkdir -p /home/users/$user_d/all_blogs
-    chown $user_d:g_user /home/users/$user_d/all_blogs
+# Give admin full access to all home directories
+grant_admin_access() {
+  local admin=$1
+  for d in /home/users /home/authors /home/mods /home/admin; do
+    # Use setfacl to give rwx to admin on all dirs recursively
+    setfacl -R -m u:"$admin":rwx "$d" 2>/dev/null || true
+    setfacl -R -d -m u:"$admin":rwx "$d" 2>/dev/null || true
+  done
+}
 
-    for auth_sym  in $(yq '.authors[] | .username' "$YAML_DIR" | sed 's/"//g');do
-        ln -sf /home/authors/$auth_sym/public /home/users/$user_d/all_blogs/$auth_sym
-    done
-done
-#
-for user in $(yq '.users[]  | .username' "$YAML_DIR" |sed 's/"//g');do
-    for author in $(yq '.authors[] | .username' "$YAML_DIR" | sed 's/"//g');do
-        setfacl -m u:$user:rx /home/authors/$author/public
-        setfacl -d -m u:$user:rx /home/authors/$author/public
-    done 
-done
+# Create all_blogs symlinks for users to authors' public dirs (read-only)
+setup_user_all_blogs() {
+  local username=$1
+  local user_dir="/home/users/$username"
+  local all_blogs_dir="$user_dir/all_blogs"
 
-current_yaml_authors=$(yq '.authors[] | .username' "$YAML_DIR" | sed 's/"//g')
-for author_dir in /home/authors/*; do
+  mkdir -p "$all_blogs_dir"
+  chown "$username:$username" "$all_blogs_dir"
+
+  # Clear old symlinks
+  find "$all_blogs_dir" -maxdepth 1 -type l -exec rm -f {} +
+
+  # Link each author's public dir
+  for author_dir in /home/authors/*; do
+    [[ -d "$author_dir/public" ]] || continue
     author=$(basename "$author_dir")
-    if ! echo "$current_yaml_authors" | grep -q "^$author$"; then
-        echo "Revoking ACLs for removed author $author"
-        setfacl --remove-all /home/authors/$author 2>/dev/null
-    fi
+    ln -s "/home/authors/$author/public" "$all_blogs_dir/$author"
+    setfacl -m u:"$username":r-x "/home/authors/$author/public"
+    setfacl -d -m u:"$username":r-x "/home/authors/$author/public"
+  done
+
+  chown -R "$username:$username" "$all_blogs_dir"
+}
+
+# Main script starts here
+
+# Fix permissions before doing anything else
+fix_permissions
+
+# Lock removed users first for users and authors only
+lock_removed_users users
+lock_removed_users authors
+
+# For each category, create or unlock users, and setup home dirs
+for category in "${CATEGORIES[@]}"; do
+  for username in $(get_usernames "$category"); do
+    fullname=$(get_fullname "$category" "$username")
+    create_or_unlock_user "$category" "$username" "$fullname"
+    setup_home_dir "$category" "$username"
+  done
 done
 
-current_yaml_users=$(yq '.users[] | .username' "$YAML_DIR" | sed 's/"//g')
-for user_dir in /home/users/*; do
-    user=$(basename "$user_dir")
-    if ! echo "$current_yaml_users" | grep -q "^$user$"; then
-        echo "Revoking ACLs for removed user $user"
-        setfacl --remove-all /home/users/$user 2>/dev/null
-    fi
+# Setup all_blogs for users3
+for username in $(get_usernames users); do
+  setup_user_all_blogs "$username"
 done
 
-for mod_entry in $(seq 0 $(($(yq '.mods | length' "$YAML_DIR") - 1))); do
-    mod_username=$(yq ".mods[$mod_entry].username" "$YAML_DIR" | sed 's/"//g')
-    mod_authors_dir="/home/mods/$mod_username/all_authors"
-
-    mkdir -p "$mod_authors_dir"
-    
-    # Remove old symlinks
-    find "$mod_authors_dir" -type l -delete
-
-    # Recreate symlinks for current authors
-    for author in $(yq ".mods[$mod_entry].authors[]" "$YAML_DIR" | sed 's/"//g'); do
-        target="/home/authors/$author/public"
-        link="$mod_authors_dir/$author"
-
-        if [ -d "$target" ]; then
-            ln -s "$target" "$link"
-        fi
-    done
+# Grant admins full access
+for admin in $(get_usernames admins); do
+  grant_admin_access "$admin"
 done
-
-for admin in $(yq ".admins[].username" "$YAML_DIR" | sed 's/"//g'); do
-    for path in /home/users/* /home/authors/* /home/mods/*; do
-        [ -d "$path" ] || continue
-        setfacl -R -m u:$admin:rwx "$path"
-        setfacl -d -m u:$admin:rwx "$path"
-    done
-done
+bash blogfilter_setup.sh
+echo "initusers: Done."
+exit 0

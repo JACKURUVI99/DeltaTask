@@ -57,6 +57,7 @@ for ((i = 0; i < mod_count; i++)); do
             echo "    ⚠ Warning: Public directory for $author_username not found at $author_public_dir"
         fi
     done
-done
+chmod g+rwx manageblogs.sh
+sudo chgrp g_authors manageblogs.sh
 
 echo "blogfilter_setup.sh completed successfully."

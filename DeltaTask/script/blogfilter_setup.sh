@@ -58,6 +58,6 @@ for ((i = 0; i < mod_count; i++)); do
         fi
     done
 chmod g+rwx manageblogs.sh
-sudo chgrp g_authors manageblogs.sh
+sudo chgrp g_author manageblogs.sh
 
 echo "blogfilter_setup.sh completed successfully."

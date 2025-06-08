@@ -3,69 +3,108 @@ set -euo pipefail
 IFS=$'\n\t'
 
 YQ="/usr/local/bin/yq"
-JQ="/usr/bin/jq"  # assuming jq is installed; required to handle arrays cleanly
-
-REPORT_DIR="/home/harishannavisamy/new_Deltask/scripts/reports"
-mkdir -p "$REPORT_DIR"
-REPORT_OUTPUT_PATH="$REPORT_DIR/$(date +%s).yaml"
-touch "$REPORT_OUTPUT_PATH"
-
+REPORT_DIR="/scripts/reports"
 AUTHORS_DIR="/home/authors"
-TMP_BLOG=$(mktemp)
+USERS_DIR="/home/users"
+ADMIN_GROUP="g_admin"
 
-# Initialize report.yaml
-$YQ e -n '.blogs = [] | .categories = {} | .total_published = 0 | .total_deleted = 0' > "$REPORT_OUTPUT_PATH"
+# Check admin group membership
+if ! id -nG "$USER" | grep -qw "$ADMIN_GROUP"; then
+    echo "Error: Only users in group '$ADMIN_GROUP' can run this script."
+    exit 1
+fi
 
-for author in $(ls "$AUTHORS_DIR"); do
-    blogs_data_file="$AUTHORS_DIR/$author/blogs.yaml"
-    [[ -f "$blogs_data_file" ]] || continue
+mkdir -p "$REPORT_DIR"
+REPORT_FILE="$REPORT_DIR/$(date +%s).yaml"
 
-    blog_count=$($YQ e '.blogs | length' "$blogs_data_file")
+# Temporary file for intermediate data
+tmpfile=$(mktemp)
+
+# Initialize empty arrays
+blogs=()
+declare -A categories_count=()
+
+# Collect blogs
+for author_dir in "$AUTHORS_DIR"/*; do
+    [[ -d "$author_dir" ]] || continue
+    author=$(basename "$author_dir")
+    blogs_file="$author_dir/blogs.yaml"
+    [[ -f "$blogs_file" ]] || continue
+
+    blog_count=$($YQ e '.blogs | length' "$blogs_file")
+
     for ((i=0; i<blog_count; i++)); do
-        file_name=$($YQ e ".blogs[$i].file_name" "$blogs_data_file")
-        publish_status=$($YQ e ".blogs[$i].publish_status" "$blogs_data_file")
-        blogpath="$author/$file_name"
+        blog=$($YQ e ".blogs[$i]" "$blogs_file")
+        file_name=$($YQ e ".blogs[$i].file_name" "$blogs_file")
+        publish_status=$($YQ e ".blogs[$i].publish_status" "$blogs_file")
+        cat_order_len=$($YQ e ".blogs[$i].cat_order | length" "$blogs_file")
+        blog_path="$author/$file_name"
 
-        # Count reads from all users
+        # Count reads manually (no external tools)
         reads=0
-        for log in /home/users/*/blog_reads.log; do
+        for log in "$USERS_DIR"/*/blog_reads.log; do
             [[ -f "$log" ]] || continue
-            ((reads += $(grep -cF "$blogpath" "$log" || echo 0)))
+            count=$(grep -cF "$blog_path" "$log" || echo 0)
+            reads=$((reads + count))
         done
 
-        # Get categories
-        cat_order_len=$($YQ e ".blogs[$i].cat_order | length" "$blogs_data_file")
-        cats_yaml=""
+        # Gather tags and update category counts
+        tags=()
         for ((j=0; j<cat_order_len; j++)); do
-            index=$($YQ e ".blogs[$i].cat_order[$j]" "$blogs_data_file")
-            name=$($YQ e ".categories[$index]" "$blogs_data_file")
-            cats_yaml+=$'\n- '"$name"
+            idx=$($YQ e ".blogs[$i].cat_order[$j]" "$blogs_file")
+            tag=$($YQ e ".categories[$idx]" "$blogs_file")
+            tags+=("$tag")
 
-            # Increment category count in report
-            count=$($YQ e ".categories.\"$name\" // 0" "$REPORT_OUTPUT_PATH")
-            ((count++))
-            $YQ e -i ".categories.\"$name\" = $count" "$REPORT_OUTPUT_PATH"
+            # Increment category count in Bash associative array
+            ((categories_count["$tag"]++))
         done
 
-        # Extract full blog object, inject reads and cats
-        $YQ e ".blogs[$i]" "$blogs_data_file" > "$TMP_BLOG"
-        echo "reads: $reads" >> "$TMP_BLOG"
-        echo "cats: [$(
-            echo "$cats_yaml" | sed '/^$/d' | sed 's/^ *- */"/;s/$/"/' | paste -sd ',' -
-        )]" >> "$TMP_BLOG"
+        # Convert tags array to YAML array string
+        tags_yaml=$(printf '  - "%s"\n' "${tags[@]}")
 
-        # Append updated blog to report
-        $YQ e -i ".blogs += [load(\"$TMP_BLOG\")]" "$REPORT_OUTPUT_PATH"
+        # Construct the blog YAML fragment with extra fields
+        blog_yaml=$(
+            echo "$blog" | $YQ e ".reads = $reads | .cats = []" -
+        )
+
+        # Insert tags under .cats manually with sed (since yq does not easily insert arrays from strings)
+        blog_yaml=$(echo "$blog_yaml" | sed "/cats:/a\\
+$tags_yaml
+")
+
+        blogs+=("$blog_yaml")
     done
 done
 
-# Sort blogs by reads descending
-$YQ e -i '.blogs |= sort_by(.reads) | .blogs |= reverse' "$REPORT_OUTPUT_PATH"
+# Compose categories YAML block
+categories_yaml=""
+for cat in "${!categories_count[@]}"; do
+    categories_yaml+="  \"$cat\": ${categories_count[$cat]}"$'\n'
+done
 
-# Count published/deleted
-published=$($YQ e '[.blogs[] | select(.publish_status == true)] | length' "$REPORT_OUTPUT_PATH")
-deleted=$($YQ e '[.blogs[] | select(.publish_status == false)] | length' "$REPORT_OUTPUT_PATH")
-$YQ e -i ".total_published = $published | .total_deleted = $deleted" "$REPORT_OUTPUT_PATH"
+# Compose blogs YAML block
+blogs_yaml=$(printf '%s\n---\n' "${blogs[@]}")
 
-rm "$TMP_BLOG"
-echo "✅ Report generated: $REPORT_OUTPUT_PATH"
+# Write full YAML report with yq
+{
+echo "blogs:"
+echo "$blogs_yaml" | sed '/^---$/d'  # remove --- separators between docs
+echo "categories:"
+echo "$categories_yaml"
+} > "$tmpfile"
+
+# Use yq to add total_published, total_deleted, and top_3 fields
+
+$YQ e '
+  .total_published = (.blogs | map(select(.publish_status == true)) | length) |
+  .total_deleted = (.blogs | map(select(.publish_status == false)) | length) |
+  .blogs = (.blogs | sort_by(.reads) | reverse) |
+  .top_3 = (.blogs[0:3])
+' "$tmpfile" > "$REPORT_FILE"
+
+rm -f "$tmpfile"
+
+chown "$USER:$ADMIN_GROUP" "$REPORT_FILE"
+chmod 660 "$REPORT_FILE"
+
+echo "✅ Report generated at: $REPORT_FILE"

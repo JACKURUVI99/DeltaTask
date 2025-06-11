@@ -1,0 +1,182 @@
+blogs:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: blogs.txt
+    publish_status: false
+    cat_order:
+      - 1
+    mod_comments: found 8 blacklisted words
+    reads: 0
+    cats: []
+    cats:
+      - "Sports"
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+    cats:
+categories:
+  Sports: 1
+total_published: 0
+total_deleted: 26
+- file_name: "example_blog.txt"
+  publish_status: false
+  cat_order: []
+  reads: 0
+  cats: []
+  cats:
+- file_name: "example_blog.txt"
+  publish_status: false
+  cat_order: []
+  reads: 0
+  cats: []
+  cats:
+- file_name: "example_blog.txt"
+  publish_status: false
+  cat_order: []
+  reads: 0
+  cats: []
+  cats:

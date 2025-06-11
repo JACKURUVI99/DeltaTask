@@ -1,0 +1,14 @@
+blogs:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+    cats: []
+categories: {}
+total_published: 0
+total_deleted: 0

@@ -1,0 +1,111 @@
+blogs:
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: blogs.txt
+    publish_status: false
+    cat_order:
+      - Sports
+    mod_comments: found 8 blacklisted words
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+  - file_name: "example_blog.txt"
+    publish_status: false
+    cat_order: []
+    reads: 0
+categories:
+  Sports: 1
+total_published: 0
+total_deleted: 26

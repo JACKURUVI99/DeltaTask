@@ -1,0 +1,19 @@
+  blog [option] <filename>
+
+Options:
+  -n    Create a blog file in the blogs directory and add it to the YAML index
+  -p    Publish a blog
+  -a    Archive a blog
+  -d    Delete a blog
+  -e    Edit categories of a blog
+  -s    Toggle subscribers_only mode for a blog
+  -h    Display this help message
+
+Arguments:
+  filename    Name of the blog file located in the ~/blogs/ directory
+
+Note:
+  Exactly one option must be provided as the first argument,
+  followed by the filename as the second argument.
+
+Good luck blogging, and may the force be with you!

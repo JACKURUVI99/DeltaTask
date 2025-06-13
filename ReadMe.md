@@ -27,14 +27,13 @@ Make sure the following are installed:
 - setfacl  
 - perl  
 - mysql  
-- nc (netcat)
 
 ### 3️⃣ Configure Files
 
 - `users.yaml` → All users and roles  
 - `userpref.yaml` → Blog preferences per user  
 - `subscriptions.yaml` → Author followings  
-- MySQL database `blogdb` with username `root` and password `kali`
+- MySQL database `blogdb` with username `root` and password `arch`
 
 ### 4️⃣ Run Setup Scripts
 
@@ -160,7 +159,7 @@ use → `sudo ./userFY.sh`
 
 ## 🔐 Notes
 
-- MySQL password `kali` is hardcoded — replace with env variables for production
+- MySQL password `arch` is hardcoded — replace with env variables for production
 - Clean up duplicate subscriptions in `subscriptions.yaml` to avoid errors
 - All features work offline (Netcat-based notifications, bash-only logic)
 

@@ -164,6 +164,4 @@ use → `sudo ./userFY.sh`
 - All features work offline (Netcat-based notifications, bash-only logic)
 
 ---
-
-Happy blogging! 🚀  
-For issues or contributions, contact the system administrator or raise a pull request in the GitHub repo.
+Made With love<3 by Harish Annavisamy!

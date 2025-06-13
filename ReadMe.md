@@ -1,6 +1,6 @@
-# 🚀 Blog Management and Subscription System
+# 🚀 Blog Management System -Delta Task
 
-Welcome to the **Blog Management and Subscription System** – a Linux-based platform for managing blogs, subscriptions, user preferences, and moderation. Built entirely with Bash scripts, YAML files, MySQL, and Linux ACLs.
+Welcome to the **Blog Management system** – a Linux-based platform for managing blogs,  user preferences, and moderation. Built entirely with Bash scripts, YAML files, MySQL, and Linux ACLs.
 
 > 🧪 **Tested On:**  
 > OS: Arch Linux 6.15.1  

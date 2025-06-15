@@ -16,14 +16,14 @@ renew_user() {
   if id "$username" &>/dev/null; then
     sudo usermod -e -1 "$username"
     sudo passwd -u "$username" &>/dev/null
-    echo "✅ Renewed user: $username"
+    echo " Renewed user: $username"
   else
-    echo "⚠️  Skipped: User '$username' does not exist"
+    echo "Skipped: User '$username' does not exist"
   fi
 }
 
 if [[ "$1" == "@everyone" ]]; then
-  echo "🔁 Renewing all regular users..."
+  echo " Renewing all regular users..."
   for user in $(awk -F: '$3 >= 1000 && $1 != "nobody" { print $1 }' /etc/passwd); do
     renew_user "$user"
   done

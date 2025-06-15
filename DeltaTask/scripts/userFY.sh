@@ -100,7 +100,7 @@ for ((u=0; u<user_count; u++)); do
         echo "  - $blog_path" >> "$fyi_path"
     done
 
-    echo "✅ FYI list generated for $username."
+    echo "FYI list generated for $username."
 done
 
 echo -e "\n🎉 FYI assignment completed successfully."

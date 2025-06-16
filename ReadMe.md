@@ -14,8 +14,10 @@ Welcome to the **Blog Management system** – a Linux-based platform for managin
 ### 1️⃣ Clone the Repo
 
 ```bash
+
 git clone https://github.com/JACKURUVI99/DeltaTask.git
 cd DeltaTask/DeltaTask/scripts
+sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
 ```
 
 ### 2️⃣ Install Required Tools
